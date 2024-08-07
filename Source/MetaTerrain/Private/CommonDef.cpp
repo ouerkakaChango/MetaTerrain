@@ -16,12 +16,12 @@ FVector2D CommonFuncs::VecXY(FVector v)
 	return FVector2D(v.X, v.Y);
 }
 
-FVector CommonFuncs::MSafeNormalize(FVector v)
+FVector CommonFuncs::MSafeNormalize(FVector v,FVector defaultVec)
 {
 	FVector re = v.GetSafeNormal();
 	if (re.Size() < 0.0001f)
 	{
-		re = FVector(0, 0, 1);
+		re = defaultVec;
 	}
 	if (re.Z < 0)
 	{
@@ -92,9 +92,6 @@ float MetaData::GetHeightAt(FVector2D p)
 	float p10 = GetPos(ix1, iy0, 0).Z;
 	float p01 = GetPos(ix0, iy1, 0).Z;
 	float p11 = GetPos(ix1, iy1, 0).Z;
-
-	auto str2 = "\ntt:\n" + FString::SanitizeFloat(p00)+" "+ FString::SanitizeFloat(p10);//FString("22");
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *str2);
 
 	float p0 = FMath::Lerp(p00, p10, kx);
 	float p1 = FMath::Lerp(p01, p11, kx);

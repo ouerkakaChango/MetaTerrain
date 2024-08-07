@@ -29,6 +29,17 @@ public:
 class CommonFuncs {
 public:
 	static FVector2D VecXY(FVector v);
-	static FVector MSafeNormalize(FVector v);
+	static FVector MSafeNormalize(FVector v, FVector defaultVec = FVector(0, 0, 1));
 	static float AngleBetween(FVector Vector1, FVector Vector2);
+};
+
+enum BodyState
+{
+	StandStill,
+	PlanFootLWithFootROnGround,//pointA plan L
+	PlanFootRWithFootLOnGround,//pointA plan R
+	SimulateFootLWithFootROnGround, //pointA simulate L
+	SimulateFootRWithFootLOnGround, //pointA simulate R
+	FootLInAir,
+	FootLBlock,
 };

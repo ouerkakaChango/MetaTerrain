@@ -18,13 +18,38 @@ public:
 	AActor* footL;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body")
 	AActor* footR;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body")
-	float footOffet = 10.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	float footGroundOffet = 10.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	float walkFootLength = 1000.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	float time_simulate = 0.02f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	float circleWalkMaxDegree = 180.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	int circleWalkSimulateDivide = 18; //such as:180deg,18sample points,10deg per time
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	float circleWalkFullStepTime = 0.5f; //such as:180deg, one step simulation takes 0.5sec
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
+	float footHitThre = 100.0f;//when judge samplepoint hit,if too deep down,consider an invalid footLand,to be a FootBlock
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
+	float footLandAccept = 10.0f;
+
+	BodyState state = BodyState::StandStill;
+	bool doing = false;
+	float t_simulate = 0;
 	// Sets default values for this component's properties
 	UBodyHolder();
 protected:
 	UMetaDataHolder* dataHolder;
+
+	float plan_time=0;
+	FVector plan_startLoc;
+	FVector plan_endLoc;
+	FVector plan_center;
+	FVector plan_rotAxis;
+	float plan_RotDeg;
 
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -36,5 +61,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Utility")
 	void InitOnMetaData(UMetaDataHolder* dataHolder_);
 
+	UFUNCTION(BlueprintCallable, Category = "Simulation")
+	void StartMetaSimulation();
+
 	void LandActor(AActor* actor);
+	void DoPlanCircleWalk(AActor* actor,FVector dir,float d);
+	void DebugState();
 };

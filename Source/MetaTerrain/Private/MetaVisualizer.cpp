@@ -125,8 +125,6 @@ void UMetaVisualizer::GetPoints(UMetaDataHolder* holder,
 		}
 	}
 	//FVector t1 = FVector(0, 0, 1);
-	//float tt = CommonFuncs::AngleBetween(t1, FVector(1,0,0));
-	//FString s1 = FString::SanitizeFloat(tt);
 	//UE_LOG(LogTemp, Warning, TEXT("XXX### test %s"),*s1);
 }
 
