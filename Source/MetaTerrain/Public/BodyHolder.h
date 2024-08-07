@@ -31,8 +31,8 @@ public:
 	int circleWalkSimulateDivide = 18; //such as:180deg,18sample points,10deg per time
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
 	float circleWalkFullStepTime = 0.5f; //such as:180deg, one step simulation takes 0.5sec
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
-	float simulateFPS = 90.0f;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	//float simulateFPS = 90.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
 	float footHitThre = 100.0f;//when judge samplepoint hit,if too deep down,consider an invalid footLand,to be a FootBlock
@@ -79,5 +79,5 @@ public:
 		, BodyState blockState
 		, BodyState landState
 		, BodyState airState);
-	void DoSimulatePlan(AActor* actor, float DeltaTime, BodyState endState);
+	void DoSimulatePlan(AActor* actor, float dt, BodyState endState);
 };

@@ -35,7 +35,13 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 		t_simulate += DeltaTime;
 		if (t_simulate >= time_simulate)
 		{
+			//FString str = FString::SanitizeFloat(t_simulate);
+			//UE_LOG(LogTemp, Warning, TEXT("TickComponent: %s"),*str);
 			t_simulate -= time_simulate;
+			if (DeltaTime > time_simulate)
+			{
+				t_simulate = 0.0f;
+			}
 			//###State Machine
 			if (state == BodyState::PlanFootLWithFootROnGround)
 			{
@@ -43,7 +49,7 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 			}
 			else if (state == BodyState::SimulateFootLWithFootROnGround)
 			{
-				DoSimulatePlan(footL, DeltaTime, PlanFootRWithFootLOnGround);//!!! AdjustFootLByGround
+				DoSimulatePlan(footL, time_simulate, PlanFootRWithFootLOnGround);//!!! AdjustFootLByGround
 			}
 			else if (state == PlanFootRWithFootLOnGround)
 			{
@@ -51,7 +57,7 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 			}
 			else if (state == SimulateFootRWithFootLOnGround)
 			{
-				DoSimulatePlan(footR, DeltaTime, PlanFootLWithFootROnGround);//!!! AdjustFootRByGround
+				DoSimulatePlan(footR, time_simulate, PlanFootLWithFootROnGround);//!!! AdjustFootRByGround
 			}
 			//###State Machine
 		}
@@ -206,9 +212,9 @@ void UBodyHolder::DebugState()
 	UE_LOG(LogTemp, Warning, TEXT("%s"),*str);
 }
 
-void UBodyHolder::DoSimulatePlan(AActor* actor, float DeltaTime, BodyState endState)
+void UBodyHolder::DoSimulatePlan(AActor* actor, float dt, BodyState endState)
 {
-	t_plan += DeltaTime;
+	t_plan += dt;
 	if (t_plan >= plan_time)
 	{
 		actor->SetActorLocation(plan_endLoc+ footGroundOffet);
