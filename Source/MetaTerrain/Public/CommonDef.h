@@ -41,5 +41,7 @@ enum BodyState
 	SimulateFootLWithFootROnGround, //pointA simulate L
 	SimulateFootRWithFootLOnGround, //pointA simulate R
 	FootLInAir,
+	FootRInAir,
 	FootLBlock,
+	FootRBlock,
 };

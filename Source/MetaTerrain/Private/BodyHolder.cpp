@@ -39,11 +39,19 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 			//###State Machine
 			if (state == BodyState::PlanFootLWithFootROnGround)
 			{
-				DoPlanCircleWalk(footL, GetOwner()->GetActorForwardVector(), walkFootLength);
+				DoPlanCircleWalk(footL, GetOwner()->GetActorForwardVector(), walkFootLength,FootLBlock,SimulateFootLWithFootROnGround,FootLInAir);
 			}
 			else if (state == BodyState::SimulateFootLWithFootROnGround)
 			{
-				DoSimulatePlan(footL, DeltaTime, PlanFootRWithFootLOnGround);
+				DoSimulatePlan(footL, DeltaTime, PlanFootRWithFootLOnGround);//!!! AdjustFootLByGround
+			}
+			else if (state == PlanFootRWithFootLOnGround)
+			{
+				DoPlanCircleWalk(footR, GetOwner()->GetActorForwardVector(), walkFootLength,FootRBlock,SimulateFootRWithFootLOnGround,FootRInAir);
+			}
+			else if (state == SimulateFootRWithFootLOnGround)
+			{
+				DoSimulatePlan(footR, DeltaTime, PlanFootLWithFootROnGround);//!!! AdjustFootRByGround
 			}
 			//###State Machine
 		}
@@ -92,7 +100,10 @@ void UBodyHolder::StartMetaSimulation()
 	t_simulate = 0;
 }
 
-void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d)
+void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
+	, BodyState blockState
+	, BodyState landState
+	, BodyState airState)
 {
 	if (actor == nullptr)
 	{
@@ -124,7 +135,7 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d)
 		{
 			if (FMath::Abs(diff) > footHitThre)
 			{
-				state = BodyState::FootLBlock;
+				state = blockState;
 			}
 			else
 			{
@@ -135,7 +146,7 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d)
 				plan_center = center;
 				plan_RotDeg = rotDeg;
 				plan_rotAxis = rotAxis;
-				state = BodyState::SimulateFootLWithFootROnGround;
+				state = landState;
 				t_plan = 0;
 				DrawDebugPoint(GetWorld(), p, 5.0f, FColor::Magenta, true);
 				//!!!
@@ -145,7 +156,7 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d)
 		}
 		DrawDebugPoint(GetWorld(), p, 5.0f, FColor::Green, true);
 	}
-	state = BodyState::FootLInAir;
+	state = airState;
 	
 	//!!!
 	DebugState();

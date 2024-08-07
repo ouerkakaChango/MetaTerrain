@@ -70,6 +70,9 @@ public:
 	void LandActor(AActor* actor);
 	void DebugState();
 
-	void DoPlanCircleWalk(AActor* actor, FVector dir, float d);
+	void DoPlanCircleWalk(AActor* actor, FVector dir, float d
+		, BodyState blockState
+		, BodyState landState
+		, BodyState airState);
 	void DoSimulatePlan(AActor* actor, float DeltaTime, BodyState endState);
 };
