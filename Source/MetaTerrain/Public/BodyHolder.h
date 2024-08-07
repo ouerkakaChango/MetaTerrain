@@ -30,6 +30,8 @@ public:
 	int circleWalkSimulateDivide = 18; //such as:180deg,18sample points,10deg per time
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
 	float circleWalkFullStepTime = 0.5f; //such as:180deg, one step simulation takes 0.5sec
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	float simulateFPS = 90.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
 	float footHitThre = 100.0f;//when judge samplepoint hit,if too deep down,consider an invalid footLand,to be a FootBlock
@@ -51,6 +53,7 @@ protected:
 	FVector plan_rotAxis;
 	float plan_RotDeg;
 
+	float t_plan = 0;
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -65,6 +68,8 @@ public:
 	void StartMetaSimulation();
 
 	void LandActor(AActor* actor);
-	void DoPlanCircleWalk(AActor* actor,FVector dir,float d);
 	void DebugState();
+
+	void DoPlanCircleWalk(AActor* actor, FVector dir, float d);
+	void DoSimulatePlan(AActor* actor, float DeltaTime, BodyState endState);
 };

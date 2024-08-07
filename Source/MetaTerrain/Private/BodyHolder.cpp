@@ -41,6 +41,10 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 			{
 				DoPlanCircleWalk(footL, GetOwner()->GetActorForwardVector(), walkFootLength);
 			}
+			else if (state == BodyState::SimulateFootLWithFootROnGround)
+			{
+				DoSimulatePlan(footL, DeltaTime, PlanFootRWithFootLOnGround);
+			}
 			//###State Machine
 		}
 	}
@@ -132,6 +136,7 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d)
 				plan_RotDeg = rotDeg;
 				plan_rotAxis = rotAxis;
 				state = BodyState::SimulateFootLWithFootROnGround;
+				t_plan = 0;
 				DrawDebugPoint(GetWorld(), p, 5.0f, FColor::Magenta, true);
 				//!!!
 				DebugState();
@@ -162,4 +167,21 @@ void UBodyHolder::DebugState()
 		str += "FootLInAir";
 	}
 	UE_LOG(LogTemp, Warning, TEXT("%s"),*str);
+}
+
+void UBodyHolder::DoSimulatePlan(AActor* actor, float DeltaTime, BodyState endState)
+{
+	t_plan += DeltaTime;
+	if (t_plan >= plan_time)
+	{
+		actor->SetActorLocation(plan_endLoc+ footGroundOffet);
+		t_plan = 0;
+		state = endState;
+		return;
+	}
+	float currentRotDeg = plan_RotDeg * FMath::Clamp(t_plan / plan_time,0.0f,1.0f);
+	auto vec1 = plan_startLoc - plan_center;
+	auto p = vec1.RotateAngleAxis(currentRotDeg, plan_rotAxis);
+	p += plan_center;
+	actor->SetActorLocation(p + footGroundOffet);
 }
