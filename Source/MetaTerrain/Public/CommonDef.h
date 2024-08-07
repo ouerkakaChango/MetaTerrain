@@ -24,13 +24,16 @@ public:
 
 	FVector GetPos(int ix, int iy, int iz);
 	float GetHeightAt(FVector2D p);
+	FIntVector GetIndexOf(FVector p);
 };
 
 class CommonFuncs {
 public:
 	static FVector2D VecXY(FVector v);
 	static FVector MSafeNormalize(FVector v, FVector defaultVec = FVector(0, 0, 1));
+	static FVector MSafeUpNormalize(FVector v, FVector defaultVec = FVector(0, 0, 1));
 	static float AngleBetween(FVector Vector1, FVector Vector2);
+	static FRotator RotFromAxes(FVector xDir, FVector yDir, FVector zDir);
 };
 
 enum BodyState
@@ -44,4 +47,11 @@ enum BodyState
 	FootRInAir,
 	FootLBlock,
 	FootRBlock,
+};
+
+enum MetaPointType
+{
+	PointA,//blue dot,smooth plane
+	PointB,//yellow dot,slope plane
+	PointC,//red cross,stiff plane or unnormalized plane
 };

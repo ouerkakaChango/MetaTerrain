@@ -110,16 +110,16 @@ void UMetaVisualizer::GetPoints(UMetaDataHolder* holder,
 
 	for (int i = 0; i < indices.Num(); i++)
 	{
-		int pType = GetPointType(holder, indices[i]);
-		if (pType == 0)
+		MetaPointType pType = GetPointType(holder, indices[i]);
+		if (pType == PointA)
 		{
 			pointsA.Push(points[i]);
 		}
-		else if (pType == 1)
+		else if (pType == PointB)
 		{
 			pointsB.Push(points[i]);
 		}
-		else if (pType == 2)
+		else if (pType == PointC)
 		{
 			pointsC.Push(points[i]);
 		}
@@ -128,7 +128,7 @@ void UMetaVisualizer::GetPoints(UMetaDataHolder* holder,
 	//UE_LOG(LogTemp, Warning, TEXT("XXX### test %s"),*s1);
 }
 
-int UMetaVisualizer::GetPointType(UMetaDataHolder* holder, FVector index)
+MetaPointType UMetaVisualizer::GetPointType(UMetaDataHolder* holder, FVector index)
 {
 	int ix = (int)(index.X);
 	int iy = (int)(index.Y);
@@ -158,10 +158,10 @@ int UMetaVisualizer::GetPointType(UMetaDataHolder* holder, FVector index)
 	for (int i = 0; i < 7; i++)
 	{
 		norms[i] = FVector::CrossProduct(neib[i + 1] - center, neib[i] - center);
-		norms[i] = CommonFuncs::MSafeNormalize(norms[i]);
+		norms[i] = CommonFuncs::MSafeUpNormalize(norms[i]);
 	}
 	norms[7] = FVector::CrossProduct(neib[0] - center, neib[7] - center);
-	norms[7] = CommonFuncs::MSafeNormalize(norms[7]);
+	norms[7] = CommonFuncs::MSafeUpNormalize(norms[7]);
 
 	//---test
 	//for (int i = 0; i < 8; i++)
@@ -195,15 +195,95 @@ int UMetaVisualizer::GetPointType(UMetaDataHolder* holder, FVector index)
 	//UE_LOG(LogTemp, Warning, TEXT("XXX### test %s"), *s1);
 	//! ___
 	bool validWalkPoint = (aveDiff<validJudge_aveAngleDiff)&&(maxDiff<validJudge_maxAngleDiff);
-	if (!validWalkPoint) { return 2; }
+	if (!validWalkPoint) { return PointC; }
 	float angleWithGround = CommonFuncs::AngleBetween(ave_norm, FVector(0,0,1));
 	if (angleWithGround > judge_okSlopeAngleEnd)
 	{
-		return 2;
+		return PointC;
 	}
 	if (angleWithGround > judge_okSlopeAngleBegin)
 	{
-		return 1;
+		return PointB;
 	}
-	return 0;
+	return PointA;
+}
+
+MetaPointType UMetaVisualizer::GetPointTypeAt(UMetaDataHolder* holder, FVector p, FVector& aveNormal)
+{
+	auto mData = holder->mData;
+	FIntVector index = mData->GetIndexOf(p);
+	int ix = index.X;
+	int iy = index.Y;
+	int iz = index.Z;
+	auto& raw = *mData->data;
+	FVector center = mData->GetPos(ix, iy, iz);
+	FVector neib[8];
+	//CCW, easy calculate center based normals
+	neib[0] = mData->GetPos(ix - 1, iy - 1, iz);
+	neib[7] = mData->GetPos(ix - 1, iy, iz);
+	neib[6] = mData->GetPos(ix - 1, iy + 1, iz);
+
+	neib[1] = mData->GetPos(ix, iy - 1, iz);
+	neib[5] = mData->GetPos(ix, iy + 1, iz);
+
+	neib[2] = mData->GetPos(ix + 1, iy - 1, iz);
+	neib[3] = mData->GetPos(ix + 1, iy, iz);
+	neib[4] = mData->GetPos(ix + 1, iy + 1, iz);
+
+	//valid point judgement,for every norm,(compare with ave norm):
+	//1.max angle dis<45 //validJudge_maxAngleDiff
+	//2.ave angle dis<10 //validJudge_aveAngleDiff
+
+	FVector norms[8];
+	for (int i = 0; i < 7; i++)
+	{
+		norms[i] = FVector::CrossProduct(neib[i + 1] - center, neib[i] - center);
+		norms[i] = CommonFuncs::MSafeUpNormalize(norms[i]);
+	}
+	norms[7] = FVector::CrossProduct(neib[0] - center, neib[7] - center);
+	norms[7] = CommonFuncs::MSafeUpNormalize(norms[7]);
+
+	//---test
+	//for (int i = 0; i < 8; i++)
+	//{
+	//	FString s1 = norms[i].ToString();
+	//	UE_LOG(LogTemp, Warning, TEXT("XXX### test %s"), *s1);
+	//
+	//}
+	//___
+
+	FVector ave_norm = FVector::ZeroVector;
+	for (int i = 0; i < 8; i++)
+	{
+		ave_norm += norms[i];
+	}
+	ave_norm /= 8.0f;
+	aveNormal = ave_norm;
+	float maxDiff = 0, aveDiff = 0;;
+	for (int i = 0; i < 8; i++)
+	{
+		float diff = CommonFuncs::AngleBetween(ave_norm, norms[i]);
+		if (diff > maxDiff)
+		{
+			maxDiff = diff;
+		}
+		aveDiff += diff;
+	}
+	aveDiff /= 8.0f;
+	//!!!
+	//FString s1 = FString::SanitizeFloat(aveDiff)+" "+ FString::SanitizeFloat(maxDiff);
+	//UE_LOG(LogTemp, Warning, TEXT("XXX### test %s"), *s1);
+	//! ___
+	bool validWalkPoint = (aveDiff < validJudge_aveAngleDiff) && (maxDiff < validJudge_maxAngleDiff);
+	if (!validWalkPoint) { return PointC; }
+	float angleWithGround = CommonFuncs::AngleBetween(ave_norm, FVector(0, 0, 1));
+	if (angleWithGround > judge_okSlopeAngleEnd)
+	{
+		return PointC;
+	}
+	if (angleWithGround > judge_okSlopeAngleBegin)
+	{
+		return PointB;
+	}
+	return PointA;
 }

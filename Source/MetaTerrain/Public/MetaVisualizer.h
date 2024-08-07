@@ -55,5 +55,6 @@ public:
 		TArray<FVector>& pointsB,
 		TArray<FVector>& pointsC);
 
-	int GetPointType(UMetaDataHolder* holder, FVector index);
+	MetaPointType GetPointType(UMetaDataHolder* holder, FVector index);//!!! tobe merged with new one
+	MetaPointType GetPointTypeAt(UMetaDataHolder* holder, FVector p, FVector& aveNormal);
 };

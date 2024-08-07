@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "MetaDataHolder.h"
+#include "MetaVisualizer.h"
 #include "BodyHolder.generated.h"
 
 
@@ -45,15 +46,19 @@ public:
 	UBodyHolder();
 protected:
 	UMetaDataHolder* dataHolder;
+	UMetaVisualizer* visualizer;
 
 	float plan_time=0;
 	FVector plan_startLoc;
 	FVector plan_endLoc;
 	FVector plan_center;
 	FVector plan_rotAxis;
+	FRotator plan_startRot;
+	FRotator plan_endRot;
 	float plan_RotDeg;
 
 	float t_plan = 0;
+	bool inited = false;
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -62,7 +67,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Utility")
-	void InitOnMetaData(UMetaDataHolder* dataHolder_);
+	void InitOnMetaData(UMetaDataHolder* dataHolder_, UMetaVisualizer* visualizer_);
 
 	UFUNCTION(BlueprintCallable, Category = "Simulation")
 	void StartMetaSimulation();

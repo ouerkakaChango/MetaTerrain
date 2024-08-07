@@ -16,7 +16,17 @@ FVector2D CommonFuncs::VecXY(FVector v)
 	return FVector2D(v.X, v.Y);
 }
 
-FVector CommonFuncs::MSafeNormalize(FVector v,FVector defaultVec)
+FVector CommonFuncs::MSafeNormalize(FVector v, FVector defaultVec)
+{
+	FVector re = v.GetSafeNormal();
+	if (re.Size() < 0.0001f)
+	{
+		re = defaultVec;
+	}
+	return re;
+}
+
+FVector CommonFuncs::MSafeUpNormalize(FVector v,FVector defaultVec)
 {
 	FVector re = v.GetSafeNormal();
 	if (re.Size() < 0.0001f)
@@ -45,6 +55,12 @@ float CommonFuncs::AngleBetween(FVector Vector1, FVector Vector2)
 	// Convert the angle to degrees
 	float AngleInDegrees = FMath::RadiansToDegrees(AngleInRadians);
 	return AngleInDegrees;
+}
+
+FRotator CommonFuncs::RotFromAxes(FVector xDir, FVector yDir, FVector zDir)
+{
+	FMatrix m(xDir, yDir, zDir, FVector::ZeroVector);
+	return m.Rotator();
 }
 
 FVector MetaData::GetPos(int ix, int iy, int iz)
@@ -96,4 +112,14 @@ float MetaData::GetHeightAt(FVector2D p)
 	float p0 = FMath::Lerp(p00, p10, kx);
 	float p1 = FMath::Lerp(p01, p11, kx);
 	return FMath::Lerp(p0, p1, ky);
+}
+
+FIntVector MetaData::GetIndexOf(FVector p)
+{
+	auto& raw = *data;
+	int ix = FMath::RoundToInt((p.X - startPos.X) / d);
+	ix = FMath::Clamp(ix, 0, raw.Num());
+	int iy = FMath::RoundToInt((p.Y - startPos.Y) / d);
+	iy = FMath::Clamp(iy, 0, raw[0].Num());//it's rectangle,so raw[0].Num() shall be fine
+	return FIntVector(ix, iy, 0);
 }

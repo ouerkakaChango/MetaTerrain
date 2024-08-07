@@ -58,11 +58,16 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 	}
 }
 
-void UBodyHolder::InitOnMetaData(UMetaDataHolder* dataHolder_)
+void UBodyHolder::InitOnMetaData(UMetaDataHolder* dataHolder_, UMetaVisualizer* visualizer_)
 {
 	if (dataHolder_ == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UBodyHolder: nullptr of dataHolder"));
+		return;
+	}
+	if (visualizer_ == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UBodyHolder: nullptr of visualizer"));
 		return;
 	}
 	if (footL == nullptr)
@@ -76,9 +81,11 @@ void UBodyHolder::InitOnMetaData(UMetaDataHolder* dataHolder_)
 		return;
 	}
 	dataHolder = dataHolder_;
+	visualizer = visualizer_;
 	LandActor(footL);
 	LandActor(footR);
 	state = BodyState::StandStill;
+	inited = true;
 }
 
 void UBodyHolder::LandActor(AActor* actor)
@@ -90,6 +97,11 @@ void UBodyHolder::LandActor(AActor* actor)
 
 void UBodyHolder::StartMetaSimulation()
 {
+	if (!inited)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StartMetaSimulation fail:!inited"));
+		return;
+	}
 	if (state != BodyState::StandStill)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("StartMetaSimulation fail: state != BodyState::StandStill"));
@@ -133,7 +145,9 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
 		//!!! need judge with targetLoc(p) pointType
 		if (diff < footLandAccept)
 		{
-			if (FMath::Abs(diff) > footHitThre)
+			FVector aveNormal;
+			MetaPointType pointType = visualizer->GetPointTypeAt(dataHolder, p, aveNormal);
+			if (FMath::Abs(diff) > footHitThre || pointType==PointC)
 			{
 				state = blockState;
 			}
@@ -146,6 +160,18 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
 				plan_center = center;
 				plan_RotDeg = rotDeg;
 				plan_rotAxis = rotAxis;
+				//---
+				plan_startRot = actor->GetActorRotation();
+				auto rightDir = actor->GetActorRightVector();
+				auto newUp = aveNormal;
+				auto newFwd = FVector::CrossProduct(rightDir,newUp);
+				newFwd = CommonFuncs::MSafeNormalize(newFwd, FVector(1, 0, 0));
+				plan_endRot = CommonFuncs::RotFromAxes(newFwd,rightDir,newUp);
+
+				DrawDebugLine(GetWorld(), p, p+50*newUp, FColor::Blue, true);
+				DrawDebugLine(GetWorld(), p, p + 50 * newFwd, FColor::Red, true);
+				DrawDebugLine(GetWorld(), p, p + 50 * rightDir, FColor::Green, true);
+				//___
 				state = landState;
 				t_plan = 0;
 				DrawDebugPoint(GetWorld(), p, 5.0f, FColor::Magenta, true);
@@ -186,13 +212,15 @@ void UBodyHolder::DoSimulatePlan(AActor* actor, float DeltaTime, BodyState endSt
 	if (t_plan >= plan_time)
 	{
 		actor->SetActorLocation(plan_endLoc+ footGroundOffet);
+		actor->SetActorRotation(plan_endRot);
 		t_plan = 0;
 		state = endState;
 		return;
 	}
-	float currentRotDeg = plan_RotDeg * FMath::Clamp(t_plan / plan_time,0.0f,1.0f);
+	float k = FMath::Clamp(t_plan / plan_time, 0.0f, 1.0f);
 	auto vec1 = plan_startLoc - plan_center;
-	auto p = vec1.RotateAngleAxis(currentRotDeg, plan_rotAxis);
+	auto p = vec1.RotateAngleAxis(plan_RotDeg * k, plan_rotAxis);
 	p += plan_center;
 	actor->SetActorLocation(p + footGroundOffet);
+	actor->SetActorRotation(FMath::Lerp(plan_startRot, plan_endRot, k));
 }
