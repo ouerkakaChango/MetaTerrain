@@ -114,12 +114,35 @@ float MetaData::GetHeightAt(FVector2D p)
 	return FMath::Lerp(p0, p1, ky);
 }
 
-FIntVector MetaData::GetIndexOf(FVector p)
+FIntVector MetaData::GetIndexOf(FVector p,int corner)
 {
+	//it's rectangle,so raw[0].Num() shall be fine
 	auto& raw = *data;
-	int ix = FMath::RoundToInt((p.X - startPos.X) / d);
+	int ix = 0; int iy = 0;
+	float fx = (p.X - startPos.X) / d;
+	float fy = (p.Y - startPos.Y) / d;
+	if (corner == 0)
+	{//00
+		ix = FMath::FloorToInt(fx);
+		iy = FMath::FloorToInt(fy);
+	}
+	else if (corner == 1)
+	{//10
+		ix = FMath::CeilToInt(fx);
+		iy = FMath::Floor(fy);
+	}
+	else if (corner == 2)
+	{//01
+		ix = FMath::Floor(fx);
+		iy = FMath::CeilToInt(fy);
+	}
+	else if (corner == 3)
+	{//11
+		ix = FMath::CeilToInt(fx);
+		iy = FMath::CeilToInt(fy);
+		
+	}
 	ix = FMath::Clamp(ix, 0, raw.Num());
-	int iy = FMath::RoundToInt((p.Y - startPos.Y) / d);
-	iy = FMath::Clamp(iy, 0, raw[0].Num());//it's rectangle,so raw[0].Num() shall be fine
+	iy = FMath::Clamp(iy, 0, raw[0].Num());
 	return FIntVector(ix, iy, 0);
 }

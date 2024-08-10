@@ -153,9 +153,21 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
 		{
 			FVector aveNormal;
 			MetaPointType pointType = visualizer->GetPointTypeAt(dataHolder, p, aveNormal);
+			//!!!---
+			//FString str = "diff: "+FString::SanitizeFloat(diff);
+			//FString str = "diff: " + FString::SanitizeFloat(FMath::Abs(diff));
+			FString str = "pointType: " + FString::FromInt((int)pointType);
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *str);
+			//___
 			if (FMath::Abs(diff) > footHitThre || pointType==PointC)
 			{
+				//!!!---
+				FString str2 = FString("blockReason: ") + ((pointType == PointC) ?FString("PointC"):FString("diff too much"));
+				UE_LOG(LogTemp, Warning, TEXT("%s"), *str2);
+				//!!!___
 				state = blockState;
+				DebugState();
+				return;
 			}
 			else
 			{
@@ -181,7 +193,6 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
 				state = landState;
 				t_plan = 0;
 				DrawDebugPoint(GetWorld(), p, 5.0f, FColor::Magenta, true);
-				//!!!
 				DebugState();
 				return;
 			}
@@ -190,7 +201,6 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
 	}
 	state = airState;
 	
-	//!!!
 	DebugState();
 }
 
@@ -201,13 +211,29 @@ void UBodyHolder::DebugState()
 	{
 		str += "SimulateFootLWithFootROnGround";
 	}
+	else if (state == SimulateFootRWithFootLOnGround)
+	{
+		str += "SimulateFootRWithFootROnGround";
+	}
 	else if (state == BodyState::FootLBlock)
 	{
 		str += "FootLBlock";
 	}
+	else if (state == FootRBlock)
+	{
+		str += "FootRBlock";
+	}
 	else if (state == BodyState::FootLInAir)
 	{
 		str += "FootLInAir";
+	}
+	else if (state == FootRInAir)
+	{
+		str += "FootRInAir";
+	}
+	else
+	{
+		str += "unhandled";
 	}
 	UE_LOG(LogTemp, Warning, TEXT("%s"),*str);
 }

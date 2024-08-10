@@ -24,7 +24,7 @@ public:
 
 	FVector GetPos(int ix, int iy, int iz);
 	float GetHeightAt(FVector2D p);
-	FIntVector GetIndexOf(FVector p);
+	FIntVector GetIndexOf(FVector p,int corner);
 };
 
 class CommonFuncs {

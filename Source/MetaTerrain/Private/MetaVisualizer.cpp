@@ -2,6 +2,7 @@
 
 
 #include "MetaVisualizer.h"
+#include "Engine.h"
 //#include "Kismet/GameplayStatics.h"
 // Sets default values for this component's properties
 UMetaVisualizer::UMetaVisualizer()
@@ -210,8 +211,24 @@ MetaPointType UMetaVisualizer::GetPointType(UMetaDataHolder* holder, FVector ind
 
 MetaPointType UMetaVisualizer::GetPointTypeAt(UMetaDataHolder* holder, FVector p, FVector& aveNormal)
 {
+	float type = 0;
+	aveNormal = FVector::ZeroVector;
+	for (int i = 0; i < 4; i++)
+	{
+		FVector n;
+		type += GetPointTypeAt_corner(holder, p, n, i);
+		aveNormal += n;
+	}
+	aveNormal /= 4.0f;
+	aveNormal = CommonFuncs::MSafeUpNormalize(aveNormal);
+	int re = FMath::RoundToInt(type / 4.0f);
+	return static_cast<MetaPointType>(re);
+}
+
+MetaPointType UMetaVisualizer::GetPointTypeAt_corner(UMetaDataHolder* holder, FVector p, FVector& aveNormal,int corner)
+{
 	auto mData = holder->mData;
-	FIntVector index = mData->GetIndexOf(p);
+	FIntVector index = mData->GetIndexOf(p,corner);
 	int ix = index.X;
 	int iy = index.Y;
 	int iz = index.Z;
@@ -279,11 +296,25 @@ MetaPointType UMetaVisualizer::GetPointTypeAt(UMetaDataHolder* holder, FVector p
 	float angleWithGround = CommonFuncs::AngleBetween(ave_norm, FVector(0, 0, 1));
 	if (angleWithGround > judge_okSlopeAngleEnd)
 	{
+		//!!!
+		DrawDebugBox(GetWorld(), center, 15.0f * FVector::OneVector, FColor::Red, true);
+		DrawDebugLine(GetWorld(), center, center + ave_norm * 20, FColor::Red, true);
+		//! ___
 		return PointC;
 	}
 	if (angleWithGround > judge_okSlopeAngleBegin)
 	{
+		//!!!
+		FString s1 = FString::SanitizeFloat(angleWithGround) + " " + FString::SanitizeFloat(judge_okSlopeAngleEnd);
+		UE_LOG(LogTemp, Warning, TEXT("XXX### test %s"), *s1);
+		DrawDebugBox(GetWorld(), center, 15.0f * FVector::OneVector, FColor::Yellow, true);
+		DrawDebugLine(GetWorld(), center, center + ave_norm * 20, FColor::Yellow, true);
+		//! ___
 		return PointB;
 	}
+	//!!!
+	DrawDebugBox(GetWorld(), center, 15.0f * FVector::OneVector, FColor::Blue, true);
+	DrawDebugLine(GetWorld(), center, center + ave_norm * 20, FColor::Blue, true);
+	//! ___
 	return PointA;
 }

@@ -57,4 +57,5 @@ public:
 
 	MetaPointType GetPointType(UMetaDataHolder* holder, FVector index);//!!! tobe merged with new one
 	MetaPointType GetPointTypeAt(UMetaDataHolder* holder, FVector p, FVector& aveNormal);
+	MetaPointType GetPointTypeAt_corner(UMetaDataHolder* holder, FVector p, FVector& aveNormal, int corner);
 };
