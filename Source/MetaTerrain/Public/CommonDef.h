@@ -47,6 +47,9 @@ enum BodyState
 	FootRInAir,
 	FootLBlock,
 	FootRBlock,
+	PlanFootLSlide,
+	SimulateFootLSlide,
+	ErrorBody,
 };
 
 enum MetaPointType

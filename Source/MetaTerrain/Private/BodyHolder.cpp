@@ -54,7 +54,7 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 			}
 			else if (state == BodyState::SimulateFootLWithFootROnGround)
 			{
-				DoSimulatePlan(footL, time_simulate);//!!! AdjustFootLByGround
+				DoSimulatePlan(footL, time_simulate);
 			}
 			else if (state == PlanFootRWithFootLOnGround)
 			{
@@ -66,7 +66,18 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 			}
 			else if (state == SimulateFootRWithFootLOnGround)
 			{
-				DoSimulatePlan(footR, time_simulate);//!!! AdjustFootRByGround
+				DoSimulatePlan(footR, time_simulate);
+			}
+			else if (state == FootLBlock)
+			{
+				if (IsGoingToSlide(plan_endNorm))
+				{
+					state = PlanFootLSlide;
+				}
+			}
+			else if (state == PlanFootLSlide)
+			{
+				DoPlanFootSlide(SimulateFootLSlide);
 			}
 			//###State Machine
 		}
@@ -204,6 +215,7 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d,
 					plan_endState = planEndState;
 					DrawDebugPoint(GetWorld(), p, 15.0f, FColor::Magenta, true);
 				}
+				plan_endNorm = aveNormal;
 				state = simuState;
 				t_plan = 0;
 				DebugState();
@@ -244,6 +256,10 @@ void UBodyHolder::DebugState()
 	{
 		str += "FootRInAir";
 	}
+	else if (state == SimulateFootLSlide)
+	{
+		str += "SimulateFootLSlide";
+	}
 	else
 	{
 		str += "unhandled";
@@ -268,4 +284,50 @@ void UBodyHolder::DoSimulatePlan(AActor* actor, float dt)
 	p += plan_center;
 	actor->SetActorLocation(p + footGroundOffet);
 	actor->SetActorRotation(FMath::Lerp(plan_startRot, plan_endRot, k));
+}
+
+bool UBodyHolder::IsGoingToSlide(FVector norm)
+{
+	float angleWithGround = CommonFuncs::AngleBetween(norm, FVector(0, 0, 1));
+	return angleWithGround >= visualizer->judge_okSlopeAngleBegin;
+}
+
+void UBodyHolder::DoPlanFootSlide(BodyState simuState)
+{
+	auto rightDir = FVector::CrossProduct(plan_endNorm, FVector::UpVector);
+	rightDir = CommonFuncs::MSafeNormalize(rightDir, FVector(1, 0, 0));
+	auto downDir = FVector::CrossProduct(plan_endNorm, rightDir);
+	downDir = CommonFuncs::MSafeNormalize(downDir, FVector(0,0,-1));
+	auto down2D = FVector2D(downDir.X, downDir.Y);
+	if (down2D.Size() < 0.0001f)
+	{
+		FString str = "VeryWeird:DoPlanFootSlide but downDir has no xy size";
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *str);
+		state = ErrorBody;
+		return;
+	}
+	int maxSlidStep = 1000;
+	int step = 0;
+	FVector2D start2d = CommonFuncs::VecXY(plan_endLoc);
+	FVector2D p2d = start2d;
+	while (step < maxSlidStep)
+	{
+		step += 1;
+		p2d += down2D * slideStepLength;
+		float h = dataHolder->GetHeightAt(p2d);
+		FVector p = FVector(p2d, h);
+		FVector n;
+		auto pntType = visualizer->GetPointTypeAt(dataHolder, p, n);
+		if (!IsGoingToSlide(n))
+		{
+			DrawDebugPoint(GetWorld(), p, 15.0f, FColor::Emerald, true);
+			state = simuState;
+			DebugState();
+			return;
+		}
+		DrawDebugPoint(GetWorld(), p, 5.0f, FColor::Black, true);
+	}
+	FString str = "VeryWeird:DoPlanFootSlide > maxSlidStep,seems a deadloop";
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *str);
+	state = ErrorBody;
 }

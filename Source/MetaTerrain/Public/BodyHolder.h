@@ -19,7 +19,7 @@ public:
 	AActor* footL;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Body")
 	AActor* footR;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
 	float footGroundOffet = 10.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
 	float walkFootLength = 1000.0f;
@@ -27,7 +27,7 @@ public:
 	float time_simulate = 0.02f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
 	float circleWalkMaxDegree = 180.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
 	int circleWalkSimulateDivide = 18; //such as:180deg,18sample points,10deg per time
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Simulate")
 	float circleWalkFullStepTime = 0.5f; //such as:180deg, one step simulation takes 0.5sec
@@ -38,6 +38,8 @@ public:
 	float footHitThre = 100.0f;//when judge samplepoint hit,if too deep down,consider an invalid footLand,to be a FootBlock
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
 	float footLandAccept = 10.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
+	float slideStepLength = 10.0f;
 
 	BodyState state = BodyState::StandStill;
 	bool doing = false;
@@ -56,7 +58,9 @@ protected:
 	FRotator plan_startRot;
 	FRotator plan_endRot;
 	float plan_RotDeg;
+
 	BodyState plan_endState;
+	FVector plan_endNorm;
 
 	float t_plan = 0;
 	bool inited = false;
@@ -82,4 +86,8 @@ public:
 		BodyState blockState,		
 		BodyState airState);
 	void DoSimulatePlan(AActor* actor, float dt);
+
+	bool IsGoingToSlide(FVector norm);
+
+	void DoPlanFootSlide(BodyState simuState);
 };
