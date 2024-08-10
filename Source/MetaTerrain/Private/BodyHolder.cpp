@@ -45,19 +45,28 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 			//###State Machine
 			if (state == BodyState::PlanFootLWithFootROnGround)
 			{
-				DoPlanCircleWalk(footL, GetOwner()->GetActorForwardVector(), walkFootLength,FootLBlock,SimulateFootLWithFootROnGround,FootLInAir);
+				DoPlanCircleWalk(footL, GetOwner()->GetActorForwardVector(), walkFootLength,
+					SimulateFootLWithFootROnGround,
+					PlanFootRWithFootLOnGround,
+					FootLBlock,				
+					FootLInAir
+					);
 			}
 			else if (state == BodyState::SimulateFootLWithFootROnGround)
 			{
-				DoSimulatePlan(footL, time_simulate, PlanFootRWithFootLOnGround);//!!! AdjustFootLByGround
+				DoSimulatePlan(footL, time_simulate);//!!! AdjustFootLByGround
 			}
 			else if (state == PlanFootRWithFootLOnGround)
 			{
-				DoPlanCircleWalk(footR, GetOwner()->GetActorForwardVector(), walkFootLength,FootRBlock,SimulateFootRWithFootLOnGround,FootRInAir);
+				DoPlanCircleWalk(footR, GetOwner()->GetActorForwardVector(), walkFootLength,
+					SimulateFootRWithFootLOnGround,
+					PlanFootLWithFootROnGround,
+					FootRBlock,				
+					FootRInAir);
 			}
 			else if (state == SimulateFootRWithFootLOnGround)
 			{
-				DoSimulatePlan(footR, time_simulate, PlanFootLWithFootROnGround);//!!! AdjustFootRByGround
+				DoSimulatePlan(footR, time_simulate);//!!! AdjustFootRByGround
 			}
 			//###State Machine
 		}
@@ -118,10 +127,11 @@ void UBodyHolder::StartMetaSimulation()
 	t_simulate = 0;
 }
 
-void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
-	, BodyState blockState
-	, BodyState landState
-	, BodyState airState)
+void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d,
+	BodyState simuState,
+	BodyState planEndState,
+	BodyState blockState,
+	BodyState airState)
 {
 	if (actor == nullptr)
 	{
@@ -151,6 +161,7 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
 		//!!! need judge with targetLoc(p) pointType
 		if (diff < footLandAccept)
 		{
+			p -= FVector(0, 0, diff);
 			FVector aveNormal;
 			MetaPointType pointType = visualizer->GetPointTypeAt(dataHolder, p, aveNormal);
 			//!!!---
@@ -159,22 +170,11 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
 			FString str = "pointType: " + FString::FromInt((int)pointType);
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *str);
 			//___
-			if (FMath::Abs(diff) > footHitThre || pointType==PointC)
-			{
-				//!!!---
-				FString str2 = FString("blockReason: ") + ((pointType == PointC) ?FString("PointC"):FString("diff too much"));
-				UE_LOG(LogTemp, Warning, TEXT("%s"), *str2);
-				//!!!___
-				state = blockState;
-				DebugState();
-				return;
-			}
-			else
 			{
 				//consider a valid land,plan ends here.
 				plan_time = deltaPlanTime * i;
 				plan_startLoc = startLoc;
-				plan_endLoc = p - FVector(0, 0, diff);
+				plan_endLoc = p;
 				plan_center = center;
 				plan_RotDeg = rotDeg;
 				plan_rotAxis = rotAxis;
@@ -186,21 +186,34 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d
 				newFwd = CommonFuncs::MSafeNormalize(newFwd, FVector(1, 0, 0));
 				plan_endRot = CommonFuncs::RotFromAxes(newFwd,rightDir,newUp);
 
-				DrawDebugLine(GetWorld(), p, p+50*newUp, FColor::Blue, true);
+				DrawDebugLine(GetWorld(), p, p + 50 * newUp, FColor::Blue, true);
 				DrawDebugLine(GetWorld(), p, p + 50 * newFwd, FColor::Red, true);
 				DrawDebugLine(GetWorld(), p, p + 50 * rightDir, FColor::Green, true);
-				//___
-				state = landState;
+				
+				if (FMath::Abs(diff) > footHitThre || pointType == PointC)
+				{
+					//!!!---
+					FString str2 = FString("blockReason: ") + ((pointType == PointC) ? FString("PointC") : FString("diff too much"));
+					UE_LOG(LogTemp, Warning, TEXT("%s"), *str2);
+					//!!!___
+					plan_endState = blockState;
+					DrawDebugPoint(GetWorld(), p, 15.0f, FColor::Red, true);
+				}
+				else
+				{
+					plan_endState = planEndState;
+					DrawDebugPoint(GetWorld(), p, 15.0f, FColor::Magenta, true);
+				}
+				state = simuState;
 				t_plan = 0;
-				DrawDebugPoint(GetWorld(), p, 5.0f, FColor::Magenta, true);
 				DebugState();
 				return;
 			}
 		}
 		DrawDebugPoint(GetWorld(), p, 5.0f, FColor::Green, true);
 	}
-	state = airState;
-	
+	state = simuState;
+	plan_endState = airState;
 	DebugState();
 }
 
@@ -238,7 +251,7 @@ void UBodyHolder::DebugState()
 	UE_LOG(LogTemp, Warning, TEXT("%s"),*str);
 }
 
-void UBodyHolder::DoSimulatePlan(AActor* actor, float dt, BodyState endState)
+void UBodyHolder::DoSimulatePlan(AActor* actor, float dt)
 {
 	t_plan += dt;
 	if (t_plan >= plan_time)
@@ -246,7 +259,7 @@ void UBodyHolder::DoSimulatePlan(AActor* actor, float dt, BodyState endState)
 		actor->SetActorLocation(plan_endLoc+ footGroundOffet);
 		actor->SetActorRotation(plan_endRot);
 		t_plan = 0;
-		state = endState;
+		state = plan_endState;
 		return;
 	}
 	float k = FMath::Clamp(t_plan / plan_time, 0.0f, 1.0f);

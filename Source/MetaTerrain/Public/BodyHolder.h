@@ -56,6 +56,7 @@ protected:
 	FRotator plan_startRot;
 	FRotator plan_endRot;
 	float plan_RotDeg;
+	BodyState plan_endState;
 
 	float t_plan = 0;
 	bool inited = false;
@@ -75,9 +76,10 @@ public:
 	void LandActor(AActor* actor);
 	void DebugState();
 
-	void DoPlanCircleWalk(AActor* actor, FVector dir, float d
-		, BodyState blockState
-		, BodyState landState
-		, BodyState airState);
-	void DoSimulatePlan(AActor* actor, float dt, BodyState endState);
+	void DoPlanCircleWalk(AActor* actor, FVector dir, float d,
+		BodyState simuState,
+		BodyState planEndState,
+		BodyState blockState,		
+		BodyState airState);
+	void DoSimulatePlan(AActor* actor, float dt);
 };
