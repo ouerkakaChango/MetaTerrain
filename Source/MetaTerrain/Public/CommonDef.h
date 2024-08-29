@@ -27,6 +27,15 @@ public:
 	FIntVector GetIndexOf(FVector p,int corner);
 };
 
+class MetaPoint
+{
+public:
+	FVector loc;
+	FRotator rot;
+
+	MetaPoint(FVector loc_, FRotator rot_);
+};
+
 class CommonFuncs {
 public:
 	static FVector2D VecXY(FVector v);
@@ -34,6 +43,9 @@ public:
 	static FVector MSafeUpNormalize(FVector v, FVector defaultVec = FVector(0, 0, 1));
 	static float AngleBetween(FVector Vector1, FVector Vector2);
 	static FRotator RotFromAxes(FVector xDir, FVector yDir, FVector zDir);
+	static void LerpActorByMetaPoints(AActor* actor, MetaPoint mp1, MetaPoint mp2, float k);
+	static void SetActorByMetaPoint(AActor* actor, MetaPoint mp);
+	static FRotator MakeRotByRightNorm(FVector rightDir, FVector norm);
 };
 
 enum BodyState
@@ -48,7 +60,9 @@ enum BodyState
 	FootLBlock,
 	FootRBlock,
 	PlanFootLSlide,
+	PlanFootRSlide,
 	SimulateFootLSlide,
+	SimulateFootRSlide,
 	ErrorBody,
 };
 

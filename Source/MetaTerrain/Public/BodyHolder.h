@@ -40,6 +40,8 @@ public:
 	float footLandAccept = 10.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
 	float slideStepLength = 10.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SimulationDetail")
+	float time_slideStep = 0.05f;
 
 	BodyState state = BodyState::StandStill;
 	bool doing = false;
@@ -64,6 +66,10 @@ protected:
 
 	float t_plan = 0;
 	bool inited = false;
+
+	TArray<MetaPoint> slidePnts;
+	int slide_inx;
+	float t_slideStep;
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -79,6 +85,7 @@ public:
 
 	void LandActor(AActor* actor);
 	void DebugState();
+	void DebugStateID();
 
 	void DoPlanCircleWalk(AActor* actor, FVector dir, float d,
 		BodyState simuState,
@@ -89,5 +96,8 @@ public:
 
 	bool IsGoingToSlide(FVector norm);
 
-	void DoPlanFootSlide(BodyState simuState);
+	void DoPlanFootSlide(AActor* actor, 
+		BodyState simuState);
+	void DoSimulateSlide(AActor* actor, float dt,
+		BodyState endState);
 };

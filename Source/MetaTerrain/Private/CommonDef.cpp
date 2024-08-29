@@ -63,6 +63,26 @@ FRotator CommonFuncs::RotFromAxes(FVector xDir, FVector yDir, FVector zDir)
 	return m.Rotator();
 }
 
+void CommonFuncs::LerpActorByMetaPoints(AActor* actor, MetaPoint mp1, MetaPoint mp2, float k)
+{
+	actor->SetActorLocationAndRotation(
+		FMath::Lerp(mp1.loc, mp2.loc, k),
+		FMath::Lerp(mp1.rot, mp2.rot, k)
+	);
+}
+
+void CommonFuncs::SetActorByMetaPoint(AActor* actor, MetaPoint mp)
+{
+	actor->SetActorLocationAndRotation(mp.loc,mp.rot);
+}
+
+FRotator CommonFuncs::MakeRotByRightNorm(FVector rightDir, FVector norm)
+{
+	auto newFwd = FVector::CrossProduct(rightDir, norm);
+	newFwd = CommonFuncs::MSafeNormalize(newFwd, FVector(1, 0, 0));
+	return CommonFuncs::RotFromAxes(newFwd, rightDir, norm);
+}
+
 FVector MetaData::GetPos(int ix, int iy, int iz)
 {
 	auto& raw = *data;
@@ -145,4 +165,10 @@ FIntVector MetaData::GetIndexOf(FVector p,int corner)
 	ix = FMath::Clamp(ix, 0, raw.Num());
 	iy = FMath::Clamp(iy, 0, raw[0].Num());
 	return FIntVector(ix, iy, 0);
+}
+
+MetaPoint::MetaPoint(FVector loc_, FRotator rot_)
+{
+	loc = loc_;
+	rot = rot_;
 }

@@ -305,8 +305,8 @@ MetaPointType UMetaVisualizer::GetPointTypeAt_corner(UMetaDataHolder* holder, FV
 	if (angleWithGround > judge_okSlopeAngleBegin)
 	{
 		//!!!
-		FString s1 = FString::SanitizeFloat(angleWithGround) + " " + FString::SanitizeFloat(judge_okSlopeAngleEnd);
-		UE_LOG(LogTemp, Warning, TEXT("XXX### test %s"), *s1);
+		//FString s1 = FString::SanitizeFloat(angleWithGround) + " " + FString::SanitizeFloat(judge_okSlopeAngleEnd);
+		//UE_LOG(LogTemp, Warning, TEXT("XXX### test %s"), *s1);
 		DrawDebugBox(GetWorld(), center, 15.0f * FVector::OneVector, FColor::Yellow, true);
 		DrawDebugLine(GetWorld(), center, center + ave_norm * 20, FColor::Yellow, true);
 		//! ___

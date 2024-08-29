@@ -32,6 +32,7 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 
 	if (doing)
 	{
+		//DebugStateID();
 		t_simulate += DeltaTime;
 		if (t_simulate >= time_simulate)
 		{
@@ -75,9 +76,28 @@ void UBodyHolder::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 					state = PlanFootLSlide;
 				}
 			}
+			else if (state == FootRBlock)
+			{
+				if (IsGoingToSlide(plan_endNorm))
+				{
+					state = PlanFootRSlide;
+				}
+			}
 			else if (state == PlanFootLSlide)
 			{
-				DoPlanFootSlide(SimulateFootLSlide);
+				DoPlanFootSlide(footL, SimulateFootLSlide);
+			}
+			else if (state == SimulateFootLSlide)
+			{
+				DoSimulateSlide(footL, time_simulate, PlanFootRWithFootLOnGround);
+			}
+			else if (state == PlanFootRSlide)
+			{
+				DoPlanFootSlide(footR, SimulateFootRSlide);
+			}
+			else if (state == SimulateFootRSlide)
+			{
+				DoSimulateSlide(footR, time_simulate, PlanFootLWithFootROnGround);
 			}
 			//###State Machine
 		}
@@ -201,7 +221,7 @@ void UBodyHolder::DoPlanCircleWalk(AActor* actor, FVector dir, float d,
 				DrawDebugLine(GetWorld(), p, p + 50 * newFwd, FColor::Red, true);
 				DrawDebugLine(GetWorld(), p, p + 50 * rightDir, FColor::Green, true);
 				
-				if (FMath::Abs(diff) > footHitThre || pointType == PointC)
+				if (FMath::Abs(diff) > footHitThre || pointType == PointC||IsGoingToSlide(aveNormal))
 				{
 					//!!!---
 					FString str2 = FString("blockReason: ") + ((pointType == PointC) ? FString("PointC") : FString("diff too much"));
@@ -267,6 +287,12 @@ void UBodyHolder::DebugState()
 	UE_LOG(LogTemp, Warning, TEXT("%s"),*str);
 }
 
+void UBodyHolder::DebugStateID()
+{
+	FString str = "Current StateID:" + FString::FromInt(static_cast<int>(state));
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *str);
+}
+
 void UBodyHolder::DoSimulatePlan(AActor* actor, float dt)
 {
 	t_plan += dt;
@@ -292,7 +318,8 @@ bool UBodyHolder::IsGoingToSlide(FVector norm)
 	return angleWithGround >= visualizer->judge_okSlopeAngleBegin;
 }
 
-void UBodyHolder::DoPlanFootSlide(BodyState simuState)
+void UBodyHolder::DoPlanFootSlide(AActor* actor, 
+	BodyState simuState)
 {
 	auto rightDir = FVector::CrossProduct(plan_endNorm, FVector::UpVector);
 	rightDir = CommonFuncs::MSafeNormalize(rightDir, FVector(1, 0, 0));
@@ -306,6 +333,11 @@ void UBodyHolder::DoPlanFootSlide(BodyState simuState)
 		state = ErrorBody;
 		return;
 	}
+	slidePnts.Empty();
+	slide_inx = 0;
+	slidePnts.Add(MetaPoint(plan_endLoc, plan_endRot));
+	t_slideStep = 0;
+
 	int maxSlidStep = 1000;
 	int step = 0;
 	FVector2D start2d = CommonFuncs::VecXY(plan_endLoc);
@@ -318,6 +350,7 @@ void UBodyHolder::DoPlanFootSlide(BodyState simuState)
 		FVector p = FVector(p2d, h);
 		FVector n;
 		auto pntType = visualizer->GetPointTypeAt(dataHolder, p, n);
+		slidePnts.Add(MetaPoint(p, CommonFuncs::MakeRotByRightNorm(actor->GetActorRightVector(),n)));
 		if (!IsGoingToSlide(n))
 		{
 			DrawDebugPoint(GetWorld(), p, 15.0f, FColor::Emerald, true);
@@ -330,4 +363,35 @@ void UBodyHolder::DoPlanFootSlide(BodyState simuState)
 	FString str = "VeryWeird:DoPlanFootSlide > maxSlidStep,seems a deadloop";
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *str);
 	state = ErrorBody;
+}
+
+void UBodyHolder::DoSimulateSlide(AActor* actor, float dt,
+	BodyState endState)
+{
+	if (slidePnts.Num()<=1)
+	{
+		FString str = "VeryWeird:DoSimulateSlide has no slide points";
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *str);
+		state = endState;
+		return;
+	}
+	t_slideStep += dt;
+	if (t_slideStep >= time_slideStep)
+	{
+		t_slideStep -= time_slideStep;
+		if (dt > time_slideStep)
+		{
+			t_slideStep = 0;
+		}
+		//---
+		slide_inx += 1;
+		if (slide_inx >= slidePnts.Num() - 1)
+		{//because we lerp between (inx,inx+1)
+			state = endState;
+			CommonFuncs::SetActorByMetaPoint(actor, slidePnts.Last());
+			return;
+		}
+	}
+	float k = FMath::Clamp(t_slideStep / time_slideStep, 0.0f, 1.0f);
+	CommonFuncs::LerpActorByMetaPoints(actor,slidePnts[slide_inx],slidePnts[slide_inx+1],k);
 }
